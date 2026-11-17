@@ -1,0 +1,18 @@
+# Extra spellings for the name join. Left side: the name exactly as a source
+# writes it. Right side: the Hugging Face repo id (or md:<lab>/<model>) it means.
+#
+# After each build, public/data/unmatched.json lists the open-weight rows that
+# could not be matched. Add a line here for each one worth having.
+
+"DeepSeek V3 (0324)": deepseek-ai/DeepSeek-V3-0324
+"DeepSeek R1 (0528)": deepseek-ai/DeepSeek-R1-0528
+"Kimi K2": moonshotai/Kimi-K2-Instruct
+"Llama 4 Maverick": meta-llama/Llama-4-Maverick-17B-128E-Instruct
+"Llama 4 Scout": meta-llama/Llama-4-Scout-17B-16E-Instruct
+
+# LMArena spellings seen in the first live build
+"Kimi K2 Preview (0711)": moonshotai/Kimi-K2-Instruct
+"Kimi K2 Preview (0905)": moonshotai/Kimi-K2-Instruct-0905
+"MiniMax-M1": MiniMaxAI/MiniMax-M1-80k
+"Mistral Large 2 (2407)": mistralai/Mistral-Large-Instruct-2407
+"Mixtral 8x22B Instruct v0.1": "md:mistral/mixtral-8x22b-instruct"

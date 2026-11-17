@@ -1,0 +1,231 @@
+# Hand-maintained parameter counts. Keyed by Hugging Face repo id, or by
+# "md:<lab>/<model>" for a models.dev entry that has no weights link.
+#
+#   basis: stated       the maker's own published figure. Beats everything,
+#                       including the count read from the weights (which can
+#                       include extras such as vision towers or DeepSeek's
+#                       multi-token-prediction head).
+#   basis: third_party  a figure relayed by someone else. Used only when the
+#                       weights and the model's name give nothing better, and
+#                       shown with a tilde.
+#
+# For a mixture-of-experts model give both `total` and `active`.
+# Sizes are written like 37B, 5.1B, 560M, 1T.
+
+# ---- Maker-stated ---------------------------------------------------------
+
+- id: deepseek-ai/DeepSeek-V3
+  also:
+    - deepseek-ai/DeepSeek-V3-0324
+    - deepseek-ai/DeepSeek-R1
+    - deepseek-ai/DeepSeek-R1-0528
+  arch: moe
+  total: 671B
+  active: 37B
+  basis: stated
+  source: https://arxiv.org/abs/2412.19437
+
+- id: moonshotai/Kimi-K2-Instruct
+  also:
+    - moonshotai/Kimi-K2-Instruct-0905
+    - moonshotai/Kimi-K2-Thinking
+  arch: moe
+  total: 1T
+  active: 32B
+  basis: stated
+  source: https://huggingface.co/moonshotai/Kimi-K2-Instruct
+
+- id: openai/gpt-oss-120b
+  arch: moe
+  total: 117B
+  active: 5.1B
+  basis: stated
+  source: https://huggingface.co/openai/gpt-oss-120b
+
+- id: openai/gpt-oss-20b
+  arch: moe
+  total: 21B
+  active: 3.6B
+  basis: stated
+  source: https://huggingface.co/openai/gpt-oss-20b
+
+- id: mistralai/Mixtral-8x7B-Instruct-v0.1
+  also: [mistralai/Mixtral-8x7B-v0.1]
+  arch: moe
+  total: 46.7B
+  active: 12.9B
+  basis: stated
+  source: https://mistral.ai/news/mixtral-of-experts
+
+- id: mistralai/Mixtral-8x22B-Instruct-v0.1
+  also: [mistralai/Mixtral-8x22B-v0.1, alpindale/WizardLM-2-8x22B, "md:mistral/mixtral-8x22b-instruct"]
+  arch: moe
+  total: 141B
+  active: 39B
+  basis: stated
+  source: https://mistral.ai/news/mixtral-8x22b
+
+- id: meta-llama/Llama-4-Scout-17B-16E-Instruct
+  also: [meta-llama/Llama-4-Scout-17B-16E]
+  arch: moe
+  total: 109B
+  active: 17B
+  basis: stated
+  source: https://huggingface.co/meta-llama/Llama-4-Scout-17B-16E-Instruct
+
+- id: meta-llama/Llama-4-Maverick-17B-128E-Instruct
+  also: [meta-llama/Llama-4-Maverick-17B-128E, meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8]
+  arch: moe
+  total: 400B
+  active: 17B
+  basis: stated
+  source: https://huggingface.co/meta-llama/Llama-4-Maverick-17B-128E-Instruct
+
+- id: zai-org/GLM-4.5
+  arch: moe
+  total: 355B
+  active: 32B
+  basis: stated
+  source: https://huggingface.co/zai-org/GLM-4.5
+
+- id: zai-org/GLM-4.5-Air
+  arch: moe
+  total: 106B
+  active: 12B
+  basis: stated
+  source: https://huggingface.co/zai-org/GLM-4.5-Air
+
+- id: MiniMaxAI/MiniMax-M2
+  arch: moe
+  total: 230B
+  active: 10B
+  basis: stated
+  source: https://huggingface.co/MiniMaxAI/MiniMax-M2
+
+- id: MiniMaxAI/MiniMax-M1-80k
+  also: [MiniMaxAI/MiniMax-M1-40k]
+  arch: moe
+  total: 456B
+  active: 45.9B
+  basis: stated
+  source: https://huggingface.co/MiniMaxAI/MiniMax-M1-80k
+
+- id: mistralai/Mistral-Large-Instruct-2407
+  also: [mistralai/Mistral-Large-Instruct-2411]
+  arch: dense
+  total: 123B
+  basis: stated
+  source: https://mistral.ai/news/mistral-large-2407
+
+- id: mistralai/Mistral-Nemo-Instruct-2407
+  arch: dense
+  total: 12.2B
+  basis: stated
+  source: https://huggingface.co/mistralai/Mistral-Nemo-Instruct-2407
+
+- id: CohereLabs/c4ai-command-a-03-2025
+  arch: dense
+  total: 111B
+  basis: stated
+  source: https://huggingface.co/CohereLabs/c4ai-command-a-03-2025
+
+- id: CohereLabs/c4ai-command-r-plus-08-2024
+  arch: dense
+  total: 104B
+  basis: stated
+  source: https://huggingface.co/CohereLabs/c4ai-command-r-plus-08-2024
+
+- id: CohereLabs/c4ai-command-r-08-2024
+  arch: dense
+  total: 32B
+  basis: stated
+  source: https://huggingface.co/CohereLabs/c4ai-command-r-08-2024
+
+- id: "md:microsoft/phi-4-mini"
+  arch: dense
+  total: 3.8B
+  basis: stated
+  source: https://huggingface.co/microsoft/Phi-4-mini-instruct
+
+- id: microsoft/Phi-4-multimodal-instruct
+  arch: dense
+  total: 5.6B
+  basis: stated
+  source: https://huggingface.co/microsoft/Phi-4-multimodal-instruct
+
+# ---- Third-party figures --------------------------------------------------
+# Relayed from Artificial Analysis model pages (read November 2026) and
+# aiwiki.ai's parameter comparison (July 2026). Not checked against the makers'
+# own pages. The first build with Hugging Face access replaces each total with
+# the count read from the weights; replace an entry with a `stated` one when
+# you have the maker's figure.
+
+- id: deepseek-ai/DeepSeek-V4-Pro
+  arch: moe
+  total: 1.6T
+  active: 49B
+  basis: third_party
+  source: aiwiki.ai parameter comparison, July 2026
+
+- id: deepseek-ai/DeepSeek-V4.1-Flash-1017
+  arch: moe
+  total: 552B
+  active: 16B
+  basis: third_party
+  source: Artificial Analysis model page, November 2026
+
+- id: moonshotai/Kimi-K2.6
+  arch: moe
+  total: 1T
+  active: 32B
+  basis: third_party
+  source: aiwiki.ai parameter comparison, July 2026
+
+- id: moonshotai/Kimi-K3.1-Pro
+  arch: moe
+  total: 2.8T
+  active: 104B
+  basis: third_party
+  source: Artificial Analysis model page, November 2026
+
+- id: zai-org/GLM-5.3
+  arch: moe
+  total: 753B
+  active: 40B
+  basis: third_party
+  source: Artificial Analysis model page, November 2026
+
+- id: zai-org/GLM-5.3-Flash
+  arch: moe
+  total: 320B
+  active: 18B
+  basis: third_party
+  source: Artificial Analysis model page, November 2026
+
+- id: stepfun-ai/Step-5-Preview
+  arch: moe
+  total: 600B
+  active: 27B
+  basis: third_party
+  source: Artificial Analysis model page, November 2026
+
+- id: XiaomiMiMo/MiMo-V2.6-Pro-RL
+  arch: moe
+  total: 1T
+  active: 42B
+  basis: third_party
+  source: Artificial Analysis model page, November 2026
+
+- id: MiniMaxAI/MiniMax-M3.1-Flash
+  arch: moe
+  total: 428B
+  active: 23B
+  basis: third_party
+  source: Artificial Analysis model page, November 2026
+
+- id: Qwen/Qwen3.8-Flash-Next
+  arch: moe
+  total: 180B
+  active: 6B
+  basis: third_party
+  source: Artificial Analysis model page, November 2026

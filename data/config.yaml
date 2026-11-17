@@ -1,0 +1,191 @@
+# Build settings. Everything here can be changed without touching the code.
+
+modelsdev:
+  # A benchmark recorded in models.dev gets its own column once this many
+  # catalogue models have a score for it.
+  min_models: 6
+  # Scores whose source URL is on one of these hosts were measured by someone
+  # other than the model's maker. Every other score is treated as maker-reported
+  # and marked as such on the site.
+  independent_hosts:
+    - artificialanalysis.ai
+    - openrouter.ai            # benchmark pages relay Artificial Analysis results
+    - aider.chat
+    - labs.scale.com
+    - scale.com
+    - swebench.com
+    - lmarena.ai
+    - livebench.ai
+    - tbench.ai
+    - epoch.ai
+    - arcprize.org
+    - swe-rebench.com
+    - metr.org
+  # models.dev copies of benchmarks that also arrive from a direct source are
+  # folded into the direct source's column and only fill its gaps.
+  merge_into:
+    "Aider Polyglot": "aider:polyglot"
+    "Artificial Analysis Intelligence Index": "aa:intelligence"
+    "Artificial Analysis Coding Index": "aa:coding"
+
+hub:
+  # Re-read a repo's parameter count only after about this many days (counts do not change).
+  recheck_days: 30
+  # Organisations whose most-downloaded text-generation repos are added even
+  # when models.dev has not catalogued them yet. Set to [] to switch this off.
+  discover_orgs:
+    - Qwen
+    - google
+    - meta-llama
+    - mistralai
+    - microsoft
+    - deepseek-ai
+    - ibm-granite
+    - HuggingFaceTB
+    - LiquidAI
+    - nvidia
+    - openai
+    - zai-org
+    - moonshotai
+    - CohereLabs
+    - tiiuae
+    - allenai
+  discover_limit: 15
+  discover_max_age_days: 730
+
+lmarena:
+  # Add open-weight models that LMArena lists but the catalogue lacks, when the
+  # name states a size (for example "Llama 3.1 405B Instruct", "Gemma 2 9B IT").
+  # They have no release date, so they only show with Released set to "Any time".
+  add_unlisted: true
+  boards:
+    - { config: text,   category: overall, id: "lmarena:text",   name: "LMArena text" }
+    - { config: webdev, category: overall, id: "lmarena:webdev", name: "LMArena WebDev" }
+
+benchlm:
+  add_unlisted: true
+  # Category composites to show beside the overall score. Available: coding,
+  # agentic, reasoning, knowledge, instructionFollowing, multimodalGrounded,
+  # multilingual, math.
+  categories:
+    - coding
+    - agentic
+    - reasoning
+    - knowledge
+
+# Hugging Face benchmark datasets whose leaderboards should be read, for example
+#   - { dataset: "org/benchmark-name", id: "hf:benchmark-name", name: "Benchmark name" }
+hf_leaderboards: []
+
+# The site opens on the first of these that has data.
+default_benchmark:
+  - "benchlm:overall"
+  - "lmarena:text"
+  - "aa:intelligence"
+  - "md:swe-bench-verified"
+  - "md:terminal-bench"
+  - "aider:polyglot"
+
+# Plain-language notes shown under the "Rank by" control. Keyed by benchmark id.
+# `group: broad` lists a benchmark under "Whole-model comparisons"; `short` is the
+# column heading in the all-benchmarks table.
+benchmark_notes:
+  "benchlm:overall":
+    description: "BenchLM's single composite score out of 100. It is modelled, not measured in one run: BenchLM blends other publishers' leaderboards and benchmark results, and for models with thin evidence it leans on similar models. Those rows are marked estimated and shown here with a tilde."
+    url: "https://benchlm.ai/about"
+    unit: index
+    group: broad
+    short: "BenchLM"
+  "benchlm:coding":
+    description: "BenchLM's composite of coding benchmarks, out of 100. Modelled from other publishers' results; estimated rows carry a tilde."
+    url: "https://benchlm.ai/about"
+    unit: index
+    group: broad
+    short: "BenchLM coding"
+  "benchlm:agentic":
+    description: "BenchLM's composite of agentic-task benchmarks, out of 100. Modelled from other publishers' results; estimated rows carry a tilde."
+    url: "https://benchlm.ai/about"
+    unit: index
+    group: broad
+    short: "BenchLM agentic"
+  "benchlm:reasoning":
+    description: "BenchLM's composite of reasoning benchmarks, out of 100. Modelled from other publishers' results; estimated rows carry a tilde."
+    url: "https://benchlm.ai/about"
+    unit: index
+    group: broad
+    short: "BenchLM reasoning"
+  "benchlm:knowledge":
+    description: "BenchLM's composite of knowledge benchmarks, out of 100. Modelled from other publishers' results; estimated rows carry a tilde."
+    url: "https://benchlm.ai/about"
+    unit: index
+    group: broad
+    short: "BenchLM knowledge"
+  "aa:intelligence":
+    group: broad
+    short: "AA Intelligence"
+    description: "Artificial Analysis's composite of reasoning, knowledge, maths and coding evaluations, all run by them under the same conditions."
+    url: "https://artificialanalysis.ai/methodology/intelligence-benchmarking"
+    unit: index
+  "aa:coding":
+    group: broad
+    short: "AA Coding"
+    description: "Artificial Analysis's composite of coding evaluations, all run by them under the same conditions."
+    url: "https://artificialanalysis.ai/methodology/intelligence-benchmarking"
+    unit: index
+  "lmarena:text":
+    group: broad
+    short: "LMArena text"
+    description: "Elo-style rating from blind side-by-side votes by people chatting with two anonymous models."
+    url: "https://lmarena.ai/leaderboard"
+    unit: Elo
+  "lmarena:webdev":
+    group: broad
+    short: "LMArena WebDev"
+    description: "Elo-style rating from blind votes on small web apps built by two anonymous models."
+    url: "https://lmarena.ai/leaderboard"
+    unit: Elo
+  "aider:polyglot":
+    short: "Aider"
+    description: "Share of 225 Exercism exercises in six languages solved within two attempts, run with Aider. No new results since October 2025."
+    url: "https://aider.chat/docs/leaderboards/"
+    unit: "%"
+  "md:swe-bench-verified":
+    short: "SWE-bench Verified"
+    description: "Share of 500 human-checked GitHub issues from Python projects that the model resolves. Results depend on the agent harness used."
+    url: "https://www.swebench.com/"
+    unit: "%"
+  "md:swe-bench-pro":
+    short: "SWE-bench Pro"
+    description: "Share of long, multi-file issues from commercial and copyleft repositories that the model resolves."
+    url: "https://labs.scale.com/leaderboard/swe_bench_pro_public"
+    unit: "%"
+  "md:swe-bench-multilingual":
+    short: "SWE-bench Multi"
+    description: "SWE-bench style issue resolution across nine programming languages."
+    url: "https://www.swebench.com/"
+    unit: "%"
+  "md:terminal-bench":
+    short: "Terminal-Bench"
+    description: "Share of command-line tasks completed in a sandboxed terminal. Entries mix benchmark versions and harnesses, so compare with care."
+    url: "https://www.tbench.ai/"
+    unit: "%"
+  "md:terminal-bench-hard":
+    short: "T-Bench Hard"
+    description: "The hard subset of Terminal-Bench as run by Artificial Analysis."
+    url: "https://artificialanalysis.ai/"
+    unit: "%"
+  "md:humanity-s-last-exam":
+    short: "HLE"
+    description: "Share correct on 2,500 expert-written questions across academic subjects."
+    url: "https://lastexam.ai/"
+    unit: "%"
+  "md:gpqa-diamond":
+    short: "GPQA"
+    description: "Share correct on 198 graduate-level multiple-choice science questions."
+    url: "https://arxiv.org/abs/2311.12022"
+    unit: "%"
+  "md:scicode":
+    short: "SciCode"
+    description: "Share of research-coding sub-problems solved, drawn from real scientific work."
+    url: "https://scicode-bench.github.io/"
+    unit: "%"

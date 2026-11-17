@@ -1,0 +1,52 @@
+# Tests on every push; the site is rebuilt and published from the default branch.
+# A pipeline schedule (Build > Pipeline schedules) re-runs the `pages` job to
+# refresh the data - see README.md.
+
+stages:
+  - test
+  - deploy
+
+default:
+  image: python:3.13-slim
+
+variables:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PIP_ROOT_USER_ACTION: ignore
+
+test:
+  stage: test
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH
+  script:
+    - pip install -r requirements.txt
+    - python -m unittest discover -s tests
+
+# `pages: true` marks this as the job that publishes the `public` folder
+# (GitLab 17.6 and later). On an older self-managed GitLab, delete that line:
+# the job name `pages` alone does the same there.
+pages:
+  stage: deploy
+  pages: true
+  rules:
+    # pushes, schedules and manual runs on the default branch
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  cache:
+    key: last-snapshot
+    paths:
+      - .cache/
+  script:
+    - pip install -r requirements.txt
+    - mkdir -p public .cache
+    - cp -r site/. public/
+    # Last good data, used to keep a column alive when its source is down and to
+    # avoid re-reading parameter counts: CI cache, then the live site, then the
+    # snapshot committed in the repository.
+    - export PREVIOUS_SNAPSHOT=".cache/models.json,${CI_PAGES_URL}/data/models.json,site/data/models.json"
+    # Optional CI/CD variables: HF_TOKEN (read-only), AA_API_KEY.
+    - python -m pipeline.build_data --out public/data/models.json
+    - cp public/data/models.json .cache/models.json
+  artifacts:
+    paths:
+      - public
+    expire_in: 30 days

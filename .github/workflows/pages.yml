@@ -1,0 +1,63 @@
+# GitHub equivalent of .gitlab-ci.yml: test, build the data, publish to GitHub Pages.
+# One-time setup: Settings > Pages > Source: "GitHub Actions".
+# Optional secrets (Settings > Secrets and variables > Actions): HF_TOKEN, AA_API_KEY.
+
+name: Build and publish
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 19 * * *"   # daily, 19:17 UTC (06:17 in Sydney during daylight saving)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - run: pip install -r requirements.txt
+      - run: python -m unittest discover -s tests
+      - id: pages
+        uses: actions/configure-pages@v5
+      # Last good data, kept between runs (see "When a source is down" in the README).
+      - uses: actions/cache@v4
+        with:
+          path: .cache
+          key: last-snapshot-${{ github.run_id }}
+          restore-keys: last-snapshot-
+      - name: Build site and data
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          AA_API_KEY: ${{ secrets.AA_API_KEY }}
+          PREVIOUS_SNAPSHOT: .cache/models.json,${{ steps.pages.outputs.base_url }}/data/models.json,site/data/models.json
+        run: |
+          mkdir -p public .cache
+          cp -r site/. public/
+          python -m pipeline.build_data --out public/data/models.json
+          cp public/data/models.json .cache/models.json
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

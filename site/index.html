@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Parameter budget: open-weight models ranked under a size limit</title>
+  <meta name="description" content="Set a limit on total or active parameters and rank the open-weight language models that fit, using public benchmarks.">
+  <link rel="preload" href="fonts/archivo-latin-wdth-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230f1b2d'/%3E%3Cpath d='M6 22h8v-8h12' fill='none' stroke='%23fcfcfb' stroke-width='3'/%3E%3Ccircle cx='22' cy='9' r='3' fill='%23eb6834'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip" href="#ranking">Skip to the ranking</a>
+
+  <header class="budget">
+    <h1 class="sentence">
+      <span class="sentence-part">Best open-weight models under</span>
+      <span class="sentence-part sentence-controls">
+        <label class="limit-field">
+          <span class="visually-hidden">Parameter limit, in billions</span>
+          <input id="limit-input" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="32" size="4">
+          <span class="limit-unit" id="limit-unit" aria-hidden="true">B</span>
+        </label>
+        <span class="mode" role="radiogroup" aria-label="Which parameters count toward the limit">
+          <label><input type="radio" name="mode" value="total" checked><span>total</span></label>
+          <label><input type="radio" name="mode" value="active"><span>active</span></label>
+        </span>
+      </span>
+      <span class="sentence-part">parameters</span>
+    </h1>
+
+
+    <p class="mode-note" id="mode-note"></p>
+  </header>
+
+  <main>
+    <form class="filters" id="filters" onsubmit="return false">
+      <label class="field field-bench">
+        <span>Rank by</span>
+        <select id="bench"></select>
+      </label>
+      <label class="field">
+        <span>Architecture</span>
+        <select id="arch">
+          <option value="all">Dense and MoE</option>
+          <option value="dense">Dense only</option>
+          <option value="moe">Mixture of experts only</option>
+        </select>
+      </label>
+      <label class="field field-search">
+        <span>Find a model</span>
+        <input id="q" type="search" placeholder="Name or maker" autocomplete="off">
+      </label>
+    </form>
+
+    <p class="bench-note" id="bench-note"></p>
+
+    <section class="chart-card" aria-labelledby="chart-title">
+      <div class="chart-head">
+        <h2 id="chart-title">Score against size</h2>
+        <ul class="legend" aria-label="Legend">
+          <li><svg width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="5" class="mark-dense"/></svg>Dense</li>
+          <li><svg width="14" height="14" aria-hidden="true"><rect x="2.5" y="2.5" width="9" height="9" transform="rotate(45 7 7)" class="mark-moe"/></svg>Mixture of experts</li>
+          <li><svg width="22" height="14" aria-hidden="true"><path d="M1 10 H9 V4 H21" class="frontier-key"/></svg>Best score at or below each size</li>
+        </ul>
+      </div>
+      <div class="chart-wrap" id="chart-wrap">
+        <svg id="chart" role="group" aria-label="Scatter plot of benchmark score against parameter count. The ranking table below holds the same values."></svg>
+        <div class="tooltip" id="tooltip" hidden></div>
+      </div>
+      <p class="chart-hint">Drag the dark handle to change the limit, or focus it and use the arrow keys. You can also type a size into the headline.</p>
+    </section>
+
+    <section id="ranking" aria-labelledby="ranking-title">
+      <div class="ranking-head">
+        <h2 id="ranking-title">Ranking</h2>
+        <span class="view" role="radiogroup" aria-label="Table layout">
+          <label><input type="radio" name="view" value="rank" checked><span>One benchmark</span></label>
+          <label><input type="radio" name="view" value="all"><span>All benchmarks</span></label>
+        </span>
+        <p id="ranking-summary" aria-live="polite"></p>
+      </div>
+      <div class="table-tools" role="group" aria-label="Filter the table">
+        <label class="check">
+          <input type="checkbox" id="fit-only" checked>
+          <span id="fit-only-label">Only models under the limit</span>
+        </label>
+        <span class="seg" role="radiogroup" aria-label="Released">
+          <label><input type="radio" name="since" value="" checked><span>Released any time</span></label>
+          <label><input type="radio" name="since" value="6"><span>Last 6 months</span></label>
+          <label><input type="radio" name="since" value="12"><span>Last 12 months</span></label>
+        </span>
+      </div>
+      <p class="matrix-key" id="matrix-key" hidden>
+        Every model in the table, against every benchmark it has a score for. A blank cell means not tested.
+        Darker cells are better within their column. Grey figures are the maker's own; a tilde marks an estimate.
+        Select a column heading to rank by it.
+      </p>
+      <div class="table-scroll" id="table-scroll">
+        <table id="table">
+          <thead id="thead"></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div id="empty" class="empty" hidden></div>
+      <details class="unscored" id="unscored" hidden>
+        <summary id="unscored-summary"></summary>
+        <ul id="unscored-list"></ul>
+      </details>
+    </section>
+  </main>
+
+  <footer>
+    <h2>Where the numbers come from</h2>
+    <p id="updated"></p>
+    <ul class="sources" id="sources"></ul>
+    <p class="fine">
+      Parameter counts are read from each model's published weights where possible, and otherwise from the
+      maker's stated or nominal size. Active counts for mixture-of-experts models are the maker's figure,
+      or an estimate from the model's configuration when the maker gives none. Estimates and third-party
+      figures are marked with a tilde; hover a size to see where it came from.
+      Scores belong to the benchmark publishers and are shown with attribution. A benchmark score is one
+      measurement on one task set, so read a ranking as a shortlist and test the top few on your own work.
+    </p>
+  </footer>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
