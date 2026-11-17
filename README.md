@@ -1,0 +1,184 @@
+# Parameter budget
+
+A static site that answers one question: **which open-weight language models fit under a
+parameter limit, and which of them score best?**
+
+Set a limit on **total** parameters (memory to load the model) or **active** parameters
+(weights used per token, which is much lower for mixture-of-experts models), pick a
+benchmark, and the site ranks everything that fits. A scatter plot of score against size
+shows the limit as a line you can drag, and the best score available at each size.
+
+The page is plain HTML, CSS and JavaScript with no dependencies and no third-party
+requests. All data comes from one file, `data/models.json`, which a scheduled GitLab CI job
+rebuilds from public sources.
+
+## Put it on GitLab Pages
+
+1. Create a project on GitLab and push this folder to its default branch.
+2. The first pipeline runs the tests, builds the data and publishes the site. The address
+   is shown under **Deploy > Pages**.
+3. Keep it fresh: **Build > Pipeline schedules > New schedule**, target the default branch,
+   with a cron pattern such as `17 19 * * *` (daily, 06:17 Sydney time during daylight
+   saving; schedules use UTC unless you set a time zone). The first run reads every
+   repository's size from Hugging Face and takes several minutes; later runs reuse those
+   answers and are much shorter, well inside the 400 free compute minutes a month on
+   gitlab.com.
+4. Optional, under **Settings > CI/CD > Variables** (masked):
+   - `HF_TOKEN`: a read-only Hugging Face token. Not required, but it raises rate limits
+     and lets the build read gated repositories you have accepted.
+   - `AA_API_KEY`: a free Artificial Analysis API key. Without it that source is skipped.
+
+`.gitlab-ci.yml` uses `pages: true`, which needs GitLab 17.6 or later. On an older
+self-managed GitLab, delete that one line; the job name `pages` does the same job there.
+
+## Or put it on GitHub Pages
+
+The same build runs from `.github/workflows/pages.yml`.
+
+1. Push this folder to a GitHub repository whose default branch is `main` (edit the
+   branch name in the workflow if yours differs).
+2. **Settings > Pages > Build and deployment > Source: GitHub Actions.**
+3. Optional secrets under **Settings > Secrets and variables > Actions**: `HF_TOKEN`,
+   `AA_API_KEY`.
+
+The workflow runs on every push, daily on a schedule, and on demand from the Actions tab.
+GitHub pauses scheduled workflows in a repository with no activity for 60 days; re-enable
+it from the Actions tab if that happens. The two CI files do not interfere, so delete
+whichever you are not using.
+
+## Run it locally
+
+```bash
+pip install -r requirements.txt
+make test          # unit and end-to-end tests, no network needed
+make data          # builds public/ with fresh data
+make serve         # http://localhost:8000
+```
+
+The site must be served over HTTP (it fetches `data/models.json`), so opening
+`index.html` from disk shows a message instead of the ranking.
+
+## Where the data comes from
+
+| Source | What it supplies | Access | Terms |
+|---|---|---|---|
+| [models.dev](https://github.com/sst/models.dev) | The list of open-weight models, release dates, licences, weights links, and benchmark scores with the URL each was published at | Repository tarball, no key | MIT |
+| [Hugging Face Hub](https://huggingface.co/docs/hub/api) | Parameter counts from the weights (`safetensors.total`), `config.json` for spotting mixture-of-experts models, and newly released repositories from the organisations listed in `data/config.yaml` | Public API, token optional | Public metadata |
+| [LMArena](https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset) | Elo ratings from blind human votes (text and WebDev boards) | Hugging Face dataset viewer API, no key | CC BY 4.0 |
+| [Artificial Analysis](https://artificialanalysis.ai) | Intelligence Index and Coding Index | Free API, key needed, 100 requests a day | Attribution with a link (the footer provides it) |
+| [Aider polyglot](https://aider.chat/docs/leaderboards/) | Coding benchmark, frozen since October 2025 | YAML file on GitHub | Apache-2.0 repository |
+| [OpenRouter](https://openrouter.ai/api/v1/models) | Extra spellings of model names, for matching only | Public API, no key | No scores or prices are taken |
+
+Sources that were looked at and left out: llm-stats.com (its free tier forbids
+redistribution), the Open LLM Leaderboard (archived), LiveBench (no fresh machine-readable
+release found), and Epoch AI's benchmark archive (CC BY 4.0 and worth adding, but its
+columns could not be inspected while this was built). Hugging Face's new per-benchmark
+leaderboards are supported: list the benchmark datasets under `hf_leaderboards` in
+`data/config.yaml` and they are joined by repository id.
+
+### What has and has not been run against the live service
+
+This project was built in a sandbox that could reach GitHub and nothing else. So:
+
+- **Run for real:** the models.dev catalogue (286 open-weight text models on 17 November
+  2026) and the Aider leaderboard. The committed snapshot `site/data/models.json` is built
+  from these two plus `data/overrides.yaml`.
+- **Written from documentation and tested only against canned responses:** Hugging Face
+  Hub, LMArena, Artificial Analysis, OpenRouter, and the Hugging Face benchmark
+  leaderboards. The first pipeline run on GitLab is their first contact with the real
+  endpoints. Check the job log: each source prints one line with `ok`, `skipped` or
+  `failed` and a reason, and the same status appears in the site footer. If the Artificial
+  Analysis path has moved, set the `AA_API_URL` variable instead of editing code.
+
+Until the Hugging Face step has run once, models whose names do not state a size (DeepSeek
+V4 Flash, GLM-5.x, MiniMax, MiMo and others) show under "Left out" as size unknown.
+
+## How sizes are decided
+
+**Total parameters**, first match wins:
+
+1. a maker-stated figure in `data/overrides.yaml` (`basis: stated`)
+2. the count read from the weights on Hugging Face
+3. a third-party figure in `data/overrides.yaml` (`basis: third_party`)
+4. the size in the model's name (`Qwen3.5-27B`)
+5. the size in the models.dev description
+
+**Active parameters** for a mixture-of-experts model, first match wins:
+
+1. a maker-stated figure in `data/overrides.yaml`
+2. the `A3B`-style token in the name (`Qwen3-30B-A3B`)
+3. the figure in the models.dev description
+4. a third-party figure in `data/overrides.yaml`
+5. an estimate from `config.json`: total minus the expert blocks that are not routed to
+   (`moe_layers x (experts - top_k) x 3 x hidden x expert_width`). This reproduces the
+   makers' figures for DeepSeek-V3, Qwen3-30B-A3B and Mixtral 8x7B to within 3%.
+
+A dense model's active count is its total. A mixture-of-experts model with no active
+figure is never given one by guesswork: it is listed as unknown and left out of rankings
+by active parameters. Third-party figures and estimates are shown with a tilde, and
+hovering any size says where it came from.
+
+A model is treated as dense unless its name, description, configuration or an override
+says otherwise. That errs on the safe side: a mixture-of-experts model nobody has flagged
+is counted at its full size, so it can be wrongly excluded from a small active budget but
+never wrongly included.
+
+## How scores are joined
+
+Leaderboards name models in their own way. Names are normalised (case, punctuation, maker
+prefix, run-mode labels such as "(Thinking)", and words like "Instruct") and must then match
+a catalogue model **exactly**; there is no fuzzy matching, so a score is never attached to
+the wrong model. Rows that fail to match are written to `data/unmatched.json` on the
+published site. To fix one, add a line to `data/aliases.yaml`.
+
+Scores recorded by models.dev keep the URL they were published at. A score whose source is
+the maker's own page is marked "The maker" in the table; the hosts treated as independent
+are listed in `data/config.yaml`. Many of the agentic-coding benchmarks are mostly
+maker-reported, with different harnesses and settings per model, and the note under
+"Rank by" says how many of a benchmark's scores that applies to.
+
+## When a source is down
+
+- Each source is fetched on its own. One failing does not stop the build.
+- A failed source keeps its scores from the last good build (CI cache first, then the live
+  site, then the committed snapshot) and the footer marks it stale with the date.
+- Parameter counts are re-read only every 30 days, so a Hugging Face outage does not blank
+  the size columns.
+- If the model catalogue itself cannot be read, the job fails and the published site stays
+  as it was.
+
+## Files
+
+```
+site/                 the page: index.html, style.css, app.js, self-hosted font
+site/data/models.json snapshot used until the first pipeline run, and as a last fallback
+pipeline/             the data build (python -m pipeline.build_data --help)
+pipeline/sources/     one small module per source
+data/config.yaml      benchmark notes, discovery list, thresholds
+data/overrides.yaml   hand-maintained parameter counts
+data/aliases.yaml     extra name spellings for the join
+tests/                python -m unittest discover -s tests
+.gitlab-ci.yml        test, build and publish on GitLab
+.github/workflows/    the same for GitHub
+```
+
+## Routine upkeep
+
+- **A new mixture-of-experts model shows "active unknown" or a tilde:** add its stated
+  figures to `data/overrides.yaml` with a link.
+- **A leaderboard row is missing from the ranking:** look in `data/unmatched.json`, add an
+  alias.
+- **A benchmark column you want is missing:** models.dev benchmarks appear once
+  `min_models` catalogue models have a score (default 6). Lower the threshold in
+  `data/config.yaml`, or add a description for it under `benchmark_notes`.
+- **The ten third-party entries in `data/overrides.yaml`** were relayed from Artificial
+  Analysis model pages and a community wiki and have not been checked against the makers'
+  pages. Totals are replaced automatically by the count from the weights once the Hugging
+  Face step runs; the active figures stay until you replace them.
+
+## Credits
+
+Typeface: Archivo (SIL Open Font License, `site/fonts/OFL.txt`). Data belongs to the
+sources above and is shown with attribution; LMArena data is CC BY 4.0 and Artificial
+Analysis requires a visible link, both of which the site footer carries.
+# model-rank
